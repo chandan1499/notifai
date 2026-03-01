@@ -124,9 +124,9 @@ export default function App() {
   const showApiKeyBanner = !apiKey && activeTab === 'notes';
 
   return (
-    <div className="flex flex-col h-screen max-w-md mx-auto bg-slate-950">
+    <div className="flex flex-col max-w-md mx-auto bg-slate-950" style={{ height: '100dvh' }}>
       {/* Header */}
-      <header className="px-5 pt-5 pb-3 flex items-center justify-between shrink-0">
+      <header className="px-5 pb-3 flex items-center justify-between shrink-0" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1.25rem)' }}>
         <div>
           <h1 className="text-xl font-bold text-white tracking-tight">RemindMe</h1>
           <p className="text-slate-500 text-xs capitalize">{activeTab}</p>

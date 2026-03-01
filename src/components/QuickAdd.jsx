@@ -172,7 +172,8 @@ export default function QuickAdd({ onAddNote, onAddReminder, apiKey }) {
       {/* Floating button */}
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-[calc(env(safe-area-inset-bottom)+4.5rem)] right-4 z-40 w-14 h-14 bg-brand-600 hover:bg-brand-500 active:scale-95 text-white rounded-full shadow-lg shadow-brand-900/50 flex items-center justify-center transition-all"
+        className="fixed right-4 z-40 w-14 h-14 bg-brand-600 hover:bg-brand-500 active:scale-95 text-white rounded-full shadow-lg shadow-brand-900/50 flex items-center justify-center transition-all"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 4.5rem)' }}
         aria-label="Quick add"
       >
         <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
