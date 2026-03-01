@@ -10,9 +10,6 @@
     @apply bg-slate-950 text-slate-100 antialiased;
     overflow: hidden;
   }
-  input, textarea, select {
-    font-size: 16px;
-  }
 }
 
 @layer utilities {
@@ -41,4 +38,10 @@
 
 .border-3 {
   border-width: 3px;
+}
+
+/* Prevent iOS Safari auto-zoom on input focus.
+   Must be outside @layer so it outranks Tailwind utility classes (text-sm etc.) */
+input, textarea, select {
+  font-size: 16px !important;
 }
