@@ -15,6 +15,7 @@ import {
   scheduleNotification,
   cancelScheduledNotification,
 } from './lib/notifications';
+import { initFCM, listenForegroundMessages } from './lib/fcm';
 
 const API_KEY_STORAGE = 'remindme_groq_api_key';
 
@@ -135,6 +136,33 @@ function MainApp({ userId }) {
   const handleRequestPermission = useCallback(async () => {
     const result = await requestNotificationPermission();
     setNotifPermission(result);
+    if (result === 'granted' && userId) {
+      initFCM(userId);
+    }
+  }, [userId]);
+
+  // Init FCM on mount if permission already granted
+  useEffect(() => {
+    if (notifPermission === 'granted' && userId) {
+      initFCM(userId);
+    }
+  }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Show foreground notification when app is open and FCM message arrives
+  useEffect(() => {
+    const unsubscribe = listenForegroundMessages((payload) => {
+      const n = payload.notification || {};
+      if (n.title) {
+        navigator.serviceWorker.ready.then((reg) => {
+          reg.showNotification(n.title, {
+            body: n.body || '',
+            icon: '/icons/icon-192.png',
+            tag: payload.webpush?.notification?.tag || 'reminder',
+          });
+        });
+      }
+    });
+    return unsubscribe;
   }, []);
 
   const handleMergeData = useCallback(

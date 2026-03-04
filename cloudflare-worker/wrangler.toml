@@ -1,0 +1,7 @@
+name = "remindme-notifications"
+main = "index.js"
+compatibility_date = "2025-01-01"
+
+# Runs every minute
+[triggers]
+crons = ["* * * * *"]

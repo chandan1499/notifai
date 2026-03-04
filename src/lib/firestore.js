@@ -1,7 +1,6 @@
 import {
   collection,
   doc,
-  addDoc,
   setDoc,
   updateDoc,
   deleteDoc,
@@ -45,6 +44,12 @@ export async function fsUpdateReminder(userId, id, fields) {
 
 export async function fsDeleteReminder(userId, id) {
   await deleteDoc(doc(getRemindersRef(userId), id));
+}
+
+// Save FCM token to users/{userId} document (creates/merges the document)
+export async function saveFcmToken(userId, token) {
+  const ref = doc(db, 'users', userId);
+  await setDoc(ref, { fcmToken: token, updatedAt: new Date().toISOString() }, { merge: true });
 }
 
 // Batch replace all (used by import)
