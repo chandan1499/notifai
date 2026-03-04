@@ -46,10 +46,20 @@ export async function fsDeleteReminder(userId, id) {
   await deleteDoc(doc(getRemindersRef(userId), id));
 }
 
-// Save FCM token to users/{userId} document (creates/merges the document)
+// Save FCM token (Chrome/Android) to users/{userId} document
 export async function saveFcmToken(userId, token) {
   const ref = doc(db, 'users', userId);
   await setDoc(ref, { fcmToken: token, updatedAt: new Date().toISOString() }, { merge: true });
+}
+
+// Save Web Push subscription (iOS Safari) to users/{userId} document
+export async function saveWebPushSubscription(userId, subscription) {
+  const ref = doc(db, 'users', userId);
+  await setDoc(
+    ref,
+    { webPushSub: JSON.stringify(subscription), updatedAt: new Date().toISOString() },
+    { merge: true }
+  );
 }
 
 // Batch replace all (used by import)
