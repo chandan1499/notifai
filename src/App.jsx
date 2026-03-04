@@ -1,8 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useSwipeable } from 'react-swipeable';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from './lib/firebase';
 import Notes from './components/Notes';
 import Reminders from './components/Reminders';
 import Settings from './components/Settings';
 import QuickAdd from './components/QuickAdd';
+import Login from './components/Login';
 import { useNotes } from './hooks/useNotes';
 import { useReminders } from './hooks/useReminders';
 import {
@@ -49,12 +53,36 @@ const TABS = [
   },
 ];
 
-export default function App() {
+const TAB_IDS = TABS.map((t) => t.id);
+
+function MainApp({ userId }) {
   const [activeTab, setActiveTab] = useState('notes');
+  const [swipeDir, setSwipeDir] = useState(null); // 'left' | 'right' | null
   const [apiKey, setApiKey] = useState(loadApiKey);
   const [notifPermission, setNotifPermission] = useState(getNotificationPermission);
 
-  const { notes, addNote, deleteNote, editNote, replaceAll: replaceAllNotes } = useNotes();
+  const navigateTab = useCallback((newTab) => {
+    const curIdx = TAB_IDS.indexOf(activeTab);
+    const newIdx = TAB_IDS.indexOf(newTab);
+    setSwipeDir(newIdx > curIdx ? 'right' : 'left');
+    setActiveTab(newTab);
+  }, [activeTab]);
+
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => {
+      const idx = TAB_IDS.indexOf(activeTab);
+      if (idx < TAB_IDS.length - 1) navigateTab(TAB_IDS[idx + 1]);
+    },
+    onSwipedRight: () => {
+      const idx = TAB_IDS.indexOf(activeTab);
+      if (idx > 0) navigateTab(TAB_IDS[idx - 1]);
+    },
+    preventScrollOnSwipe: false,
+    trackTouch: true,
+    delta: 50,
+  });
+
+  const { notes, addNote, deleteNote, editNote, replaceAll: replaceAllNotes } = useNotes(userId);
   const {
     reminders,
     overdueReminders,
@@ -64,9 +92,8 @@ export default function App() {
     deleteReminder,
     markNotified,
     replaceAll: replaceAllReminders,
-  } = useReminders();
+  } = useReminders(userId);
 
-  // Schedule notifications for all upcoming reminders on mount and when reminders change
   useEffect(() => {
     if (notifPermission !== 'granted') return;
     upcomingReminders.forEach((r) => {
@@ -75,9 +102,9 @@ export default function App() {
   }, [upcomingReminders, notifPermission]);
 
   const handleAddReminder = useCallback(
-    (title, datetime, note) => {
-      const reminder = addReminder(title, datetime, note);
-      if (notifPermission === 'granted') {
+    async (title, datetime, note) => {
+      const reminder = await addReminder(title, datetime, note);
+      if (notifPermission === 'granted' && reminder) {
         scheduleNotification(reminder.id, reminder.title, reminder.datetime);
       }
     },
@@ -111,21 +138,18 @@ export default function App() {
   }, []);
 
   const handleMergeData = useCallback(
-    (mergedNotes, mergedReminders) => {
-      replaceAllNotes(mergedNotes);
-      replaceAllReminders(mergedReminders);
+    async (mergedNotes, mergedReminders) => {
+      await replaceAllNotes(mergedNotes);
+      await replaceAllReminders(mergedReminders);
     },
     [replaceAllNotes, replaceAllReminders]
   );
 
   const overdueCount = overdueReminders.length;
-
-  // Show first-time API key prompt (redirect to settings if no key)
   const showApiKeyBanner = !apiKey && activeTab === 'notes';
 
   return (
     <div className="flex flex-col max-w-md mx-auto bg-slate-950" style={{ height: '100dvh' }}>
-      {/* Header */}
       <header className="px-5 pb-3 flex items-center justify-between shrink-0" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1.25rem)' }}>
         <div>
           <h1 className="text-xl font-bold text-white tracking-tight">RemindMe</h1>
@@ -143,7 +167,6 @@ export default function App() {
         )}
       </header>
 
-      {/* API key banner */}
       {showApiKeyBanner && (
         <div className="mx-4 mb-2 bg-brand-500/10 border border-brand-500/30 rounded-2xl px-4 py-3 flex items-center gap-3">
           <svg className="w-4 h-4 text-brand-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -151,10 +174,7 @@ export default function App() {
           </svg>
           <p className="text-brand-300 text-xs flex-1">
             Add your Groq API key in{' '}
-            <button
-              onClick={() => setActiveTab('settings')}
-              className="underline font-semibold"
-            >
+            <button onClick={() => setActiveTab('settings')} className="underline font-semibold">
               Settings
             </button>{' '}
             to enable smart search.
@@ -162,62 +182,56 @@ export default function App() {
         </div>
       )}
 
-      {/* Main content */}
-      <main className="flex-1 overflow-hidden">
-        {activeTab === 'notes' && (
-          <Notes
-            notes={notes}
-            onAdd={addNote}
-            onDelete={deleteNote}
-            onEdit={editNote}
-            apiKey={apiKey}
-          />
-        )}
-        {activeTab === 'reminders' && (
-          <Reminders
-            overdueReminders={overdueReminders}
-            upcomingReminders={upcomingReminders}
-            doneReminders={doneReminders}
-            onAdd={handleAddReminder}
-            onDelete={handleDeleteReminder}
-            onMarkDone={handleMarkDone}
-            notifPermission={notifPermission}
-            onRequestPermission={handleRequestPermission}
-          />
-        )}
-        {activeTab === 'settings' && (
-          <Settings
-            apiKey={apiKey}
-            onSaveApiKey={handleSaveApiKey}
-            notes={notes}
-            reminders={reminders}
-            onReplaceNotes={replaceAllNotes}
-            onReplaceReminders={replaceAllReminders}
-            onMergeData={handleMergeData}
-          />
-        )}
+      <main
+        className="flex-1 overflow-hidden"
+        {...swipeHandlers}
+      >
+        <div
+          key={activeTab}
+          className={`h-full ${swipeDir === 'right' ? 'animate-slide-in-right' : swipeDir === 'left' ? 'animate-slide-in-left' : ''}`}
+        >
+          {activeTab === 'notes' && (
+            <Notes notes={notes} onAdd={addNote} onDelete={deleteNote} onEdit={editNote} apiKey={apiKey} />
+          )}
+          {activeTab === 'reminders' && (
+            <Reminders
+              overdueReminders={overdueReminders}
+              upcomingReminders={upcomingReminders}
+              doneReminders={doneReminders}
+              onAdd={handleAddReminder}
+              onDelete={handleDeleteReminder}
+              onMarkDone={handleMarkDone}
+              notifPermission={notifPermission}
+              onRequestPermission={handleRequestPermission}
+            />
+          )}
+          {activeTab === 'settings' && (
+            <Settings
+              apiKey={apiKey}
+              onSaveApiKey={handleSaveApiKey}
+              notes={notes}
+              reminders={reminders}
+              onReplaceNotes={replaceAllNotes}
+              onReplaceReminders={replaceAllReminders}
+              onMergeData={handleMergeData}
+            />
+          )}
+        </div>
       </main>
 
-      {/* Quick Add floating button */}
-      <QuickAdd
-        onAddNote={addNote}
-        onAddReminder={handleAddReminder}
-        apiKey={apiKey}
-      />
+      <QuickAdd onAddNote={addNote} onAddReminder={handleAddReminder} apiKey={apiKey} />
 
-      {/* Bottom tab bar */}
       <nav
         className="shrink-0 bg-slate-900 border-t border-slate-800 flex"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         {TABS.map((tab) => {
           const isActive = activeTab === tab.id;
-          const badge =
-            tab.id === 'reminders' && overdueCount > 0 ? overdueCount : null;
+          const badge = tab.id === 'reminders' && overdueCount > 0 ? overdueCount : null;
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => navigateTab(tab.id)}
               className={`flex-1 flex flex-col items-center justify-center py-3 gap-1 transition-colors relative ${
                 isActive ? 'text-brand-400' : 'text-slate-500'
               }`}
@@ -237,4 +251,39 @@ export default function App() {
       </nav>
     </div>
   );
+}
+
+export default function App() {
+  const [authState, setAuthState] = useState('loading'); // 'loading' | 'authenticated' | 'unauthenticated'
+  const [userId, setUserId] = useState(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUserId(user.uid);
+        setAuthState('authenticated');
+      } else {
+        setUserId(null);
+        setAuthState('unauthenticated');
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  if (authState === 'loading') {
+    return (
+      <div className="flex items-center justify-center bg-slate-950" style={{ height: '100dvh' }}>
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-slate-500 text-sm">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (authState === 'unauthenticated') {
+    return <Login />;
+  }
+
+  return <MainApp userId={userId} />;
 }

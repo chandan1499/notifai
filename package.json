@@ -10,9 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "firebase": "^12.10.0",
     "groq-sdk": "^0.37.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-swipeable": "^7.0.2",
     "workbox-precaching": "^7.4.0"
   },
   "devDependencies": {

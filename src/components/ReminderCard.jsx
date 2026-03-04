@@ -47,7 +47,7 @@ export default function ReminderCard({ reminder, onDelete, onMarkDone }) {
           </div>
           <p className="text-xs text-slate-500 mt-0.5">{formatDateTime(reminder.datetime)}</p>
           {reminder.note && (
-            <p className="text-slate-400 text-sm mt-1 leading-relaxed">{reminder.note}</p>
+            <p className="text-slate-400 text-sm mt-1 leading-relaxed break-all">{reminder.note}</p>
           )}
         </div>
         <div className="flex gap-1 shrink-0">

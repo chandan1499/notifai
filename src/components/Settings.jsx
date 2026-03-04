@@ -1,4 +1,6 @@
 import { useState, useRef } from 'react';
+import { signOut } from 'firebase/auth';
+import { auth } from '../lib/firebase';
 import { resetGroqClient } from '../lib/groq';
 import { exportData, readBackupFile, mergeData } from '../lib/backup';
 
@@ -198,10 +200,32 @@ export default function Settings({
         )}
       </section>
 
+      {/* Account */}
+      <section className="bg-slate-800 rounded-2xl p-4 border border-slate-700 space-y-3">
+        <div className="flex items-center gap-2">
+          <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+          <h2 className="font-semibold text-white">Account</h2>
+        </div>
+        <p className="text-slate-500 text-xs leading-relaxed">
+          Signed in — your data is synced to Firebase and persists across reinstalls.
+        </p>
+        <button
+          onClick={() => signOut(auth)}
+          className="w-full bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-xl py-2.5 text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          Sign Out
+        </button>
+      </section>
+
       {/* App info */}
       <section className="text-center text-slate-700 text-xs space-y-1 pb-4">
         <p>RemindMe</p>
-        <p>All data stored locally on your device</p>
+        <p>Data stored in Firebase Firestore</p>
       </section>
     </div>
   );

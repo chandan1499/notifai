@@ -63,7 +63,6 @@ export default function QuickAdd({ onAddNote, onAddReminder, apiKey }) {
     if (!open && recognitionRef.current) {
       recognitionRef.current.stop();
       recognitionRef.current = null;
-      setRecording(false);
     }
   }, [open]);
 
@@ -176,9 +175,7 @@ export default function QuickAdd({ onAddNote, onAddReminder, apiKey }) {
         style={{ bottom: 'calc(env(safe-area-inset-bottom) + 4.5rem)' }}
         aria-label="Quick add"
       >
-        <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-        </svg>
+        <img src="/icons/Ai-icon.png" alt="AI quick add" className="w-8 h-8 object-contain" />
       </button>
 
       {/* Backdrop + Bottom sheet */}

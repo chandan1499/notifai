@@ -92,7 +92,7 @@ export default function NoteCard({ note, onDelete, onEdit, highlight }) {
       {note.body && (
         <div className="mt-2">
           <p
-            className={`text-slate-300 text-sm leading-relaxed whitespace-pre-wrap ${
+            className={`text-slate-300 text-sm leading-relaxed whitespace-pre-wrap break-all ${
               !showFull && note.body.length > 120 ? 'line-clamp-3' : ''
             }`}
           >
